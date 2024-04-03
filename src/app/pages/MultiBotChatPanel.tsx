@@ -10,7 +10,6 @@ import LayoutSwitch from '~app/components/Chat/LayoutSwitch'
 import { CHATBOTS, Layout } from '~app/consts'
 import { useChat } from '~app/hooks/use-chat'
 import { trackEvent } from '~app/plausible'
-import { showPremiumModalAtom } from '~app/state'
 import { BotId } from '../bots'
 import ConversationPanel from '../components/Chat/ConversationPanel'
 
@@ -40,16 +39,6 @@ const GeneralChatPanel: FC<{
   const generating = useMemo(() => chats.some((c) => c.generating), [chats])
   const [layout, setLayout] = useAtom(layoutAtom)
 
-  const setPremiumModalOpen = useSetAtom(showPremiumModalAtom)
-  const premiumState = usePremium()
-  const disabled = useMemo(() => !premiumState.isLoading && !premiumState.activated, [premiumState])
-
-  useEffect(() => {
-    if (disabled && (chats.length > 2 || supportImageInput)) {
-      setPremiumModalOpen('all-in-one-layout')
-    }
-  }, [chats.length, disabled, setPremiumModalOpen, supportImageInput])
-
   const sendSingleMessage = useCallback(
     (input: string, botId: BotId) => {
       const chat = chats.find((c) => c.botId === botId)
@@ -61,13 +50,12 @@ const GeneralChatPanel: FC<{
   const sendAllMessage = useCallback(
     (input: string, image?: File) => {
       if (disabled && chats.length > 2) {
-        setPremiumModalOpen('all-in-one-layout')
         return
       }
       uniqBy(chats, (c) => c.botId).forEach((c) => c.sendMessage(input, image))
       trackEvent('send_messages', { layout, disabled })
     },
-    [chats, disabled, layout, setPremiumModalOpen],
+    [chats, disabled, layout],
   )
 
   const onSwitchBot = useCallback(
